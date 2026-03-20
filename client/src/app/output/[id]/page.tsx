@@ -152,8 +152,60 @@ export default function OutputPage() {
           <div>Section: ______________________</div>
         </div>
 
-        {/* Sections Placeholder for now */}
-        <div>Result content ready...</div>
+        {/* Sections */}
+        <div>
+          {result.sections.map((section, sIndex) => (
+            <div key={sIndex} style={{ marginBottom: '3rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{section.title}</h3>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  ({section.questionType} - {section.marksPerQuestion} mark{section.marksPerQuestion > 1 ? 's' : ''} each)
+                </span>
+              </div>
+              <p style={{ fontStyle: 'italic', marginBottom: '1.5rem' }}>{section.instruction}</p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                {section.questions.map((q, qIndex) => (
+                  <div key={qIndex} style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ fontWeight: 500 }}>Q{q.questionNumber}.</div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ marginBottom: '0.5rem' }}>{q.questionText}</p>
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <span className={`badge badge-${q.difficulty}`}>{q.difficulty}</span>
+                        <span className="badge" style={{ backgroundColor: '#F3F4F6', color: 'var(--text-secondary)' }}>
+                          [{q.marks} Mark{q.marks > 1 ? 's' : ''}]
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '4rem', marginBottom: '4rem', fontWeight: 600 }}>
+          *** END OF QUESTION PAPER ***
+        </div>
+
+        {/* Answer Key */}
+        <div style={{ borderTop: '2px dashed var(--border-color)', paddingTop: '2rem', pageBreakBefore: 'always' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>Answer Key</h2>
+          
+          {result.sections.map((section, sIndex) => (
+            <div key={`ans-${sIndex}`} style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>{section.title}</h4>
+              <div style={{ paddingLeft: '1rem' }}>
+                {section.questions.map((q, qIndex) => (
+                  <div key={`ans-q-${qIndex}`} style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 500, minWidth: '40px' }}>Q{q.questionNumber}.</span>
+                    <span>{q.answer || "Answer not provided"}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
