@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 import { initializeWebSocket } from "./websocket/socketManager";
 import assignmentRoutes from "./routes/assignmentRoutes";
+import resultRoutes from "./routes/resultRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/assignments", assignmentRoutes);
+app.use("/api/results", resultRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
