@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import Assignment from "../models/Assignment";
+import Result from "../models/Result";
 import { addGenerationJob } from "../workers/generationQueue";
+import { getRedisConnection } from "../config/redis";
 
 export const createAssignment = async (
   req: Request,
@@ -100,6 +102,45 @@ export const getAllAssignments = async (
   try {
     const assignments = await Assignment.find().sort({ createdAt: -1 });
     res.json({ success: true, data: assignments });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const regenerateAssignment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const assignment = await Assignment.findById(id);
+    if (!assignment) {
+      res.status(404).json({ success: false, message: "Assignment not found" });
+      return;
+    }
+
+    await Result.deleteMany({ assignmentId: id });
+    const redis = getRedisConnection();
+    await redis.del(`result:${id}`);
+
+    await Assignment.findByIdAndUpdate(id, { status: "processing" });
+
+    const jobId = `${id}-${Date.now()}`;
+    await addGenerationJob(jobId, {
+      assignmentId: id,
+      title: assignment.title,
+      subject: assignment.subject,
+      classLevel: assignment.classLevel,
+      questionConfigs: assignment.questionConfigs,
+      additionalInstructions: assignment.additionalInstructions,
+      fileContent: assignment.fileContent,
+    });
+
+    res.json({
+      success: true,
+      data: { assignmentId: id, status: "processing" },
+    });
   } catch (error) {
     next(error);
   }
