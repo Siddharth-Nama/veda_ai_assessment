@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useWebSocket } from "@/lib/useWebSocket";
 import { AssignmentResponse, GeneratedPaper } from "@/types";
+import jsPDF from "jspdf";
 
 export default function OutputPage() {
   const params = useParams();
@@ -51,6 +52,48 @@ export default function OutputPage() {
       fetchResult();
     }
   }, [assignmentId, assignment?.status, progress?.status]);
+
+  const handleRegenerate = async () => {
+    try {
+      setResult(null);
+      setAssignment(prev => prev ? { ...prev, status: "processing" } : null);
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assignments/${assignmentId}/regenerate`, {
+        method: "POST",
+      });
+    } catch (err) {
+      console.error("Failed to regenerate", err);
+    }
+  };
+
+  const downloadPDF = async () => {
+    const element = document.getElementById("question-paper");
+    if (!element) return;
+    
+    // Simple jsPDF implementation for now
+    const pdf = new jsPDF("p", "mm", "a4");
+    
+    // We would use an html2canvas library here for perfect rendering,
+    // but without adding another dependency we'll use a basic approach
+    // For a production app, we'd add html2canvas and use it here.
+    pdf.setFont("helvetica");
+    pdf.setFontSize(16);
+    pdf.text(result?.schoolName || "Assessment", 105, 20, { align: "center" });
+    
+    pdf.setFontSize(12);
+    pdf.text(`Subject: ${result?.subject}`, 20, 35);
+    pdf.text(`Class: ${result?.classLevel}`, 150, 35);
+    
+    pdf.text(`Time: ${result?.timeAllowed}`, 20, 45);
+    pdf.text(`Max Marks: ${result?.maxMarks}`, 150, 45);
+    
+    pdf.setLineWidth(0.5);
+    pdf.line(20, 50, 190, 50);
+    
+    pdf.text("Please use browser print (Ctrl+P) and Save to PDF for full formatting.", 20, 70);
+    pdf.text("The layout is optimized for standard A4 printing.", 20, 80);
+    
+    pdf.save(`${result?.subject}_Class_${result?.classLevel}_Assessment.pdf`);
+  };
 
   if (error) {
     return (
@@ -112,8 +155,15 @@ export default function OutputPage() {
           &larr; Back
         </button>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn-secondary">Regenerate</button>
-          <button className="btn-primary">Download PDF</button>
+          <button onClick={handleRegenerate} className="btn-secondary">
+            Regenerate
+          </button>
+          <button onClick={() => window.print()} className="btn-primary">
+            Print / Save PDF
+          </button>
+          <button onClick={downloadPDF} className="btn-secondary" style={{ display: 'none' }}>
+            Raw PDF
+          </button>
         </div>
       </div>
       
