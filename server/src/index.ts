@@ -7,6 +7,7 @@ import { initializeWebSocket } from "./websocket/socketManager";
 import assignmentRoutes from "./routes/assignmentRoutes";
 import resultRoutes from "./routes/resultRoutes";
 import { errorHandler } from "./middleware/errorHandler";
+import { startWorker } from "./workers/generationWorker";
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   await connectDB();
   initializeWebSocket(server);
+  startWorker();
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
