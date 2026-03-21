@@ -3,7 +3,7 @@ import { env } from "./env";
 
 let redisConnection: IORedis | null = null;
 
-export const getRedisConnection = (): IORedis => {
+export const getRedisConnection = (): any => {
   if (!redisConnection) {
     const isUpstash = env.redisUrl.includes(".upstash.io");
     redisConnection = new IORedis(env.redisUrl, {
@@ -15,7 +15,7 @@ export const getRedisConnection = (): IORedis => {
   return redisConnection;
 };
 
-export const createNewRedisConnection = (): IORedis => {
+export const createNewRedisConnection = (): any => {
   const isUpstash = env.redisUrl.includes(".upstash.io");
   return new IORedis(env.redisUrl, {
     maxRetriesPerRequest: null,

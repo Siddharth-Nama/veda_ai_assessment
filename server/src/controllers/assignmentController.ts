@@ -113,7 +113,7 @@ export const regenerateAssignment = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const assignment = await Assignment.findById(id);
     if (!assignment) {
       res.status(404).json({ success: false, message: "Assignment not found" });
@@ -128,13 +128,13 @@ export const regenerateAssignment = async (
 
     const jobId = `${id}-${Date.now()}`;
     await addGenerationJob(jobId, {
-      assignmentId: id,
-      title: assignment.title,
-      subject: assignment.subject,
-      classLevel: assignment.classLevel,
-      questionConfigs: assignment.questionConfigs,
-      additionalInstructions: assignment.additionalInstructions,
-      fileContent: assignment.fileContent,
+      assignmentId: String(id),
+      title: String(assignment.title),
+      subject: String(assignment.subject),
+      classLevel: String(assignment.classLevel),
+      questionConfigs: assignment.questionConfigs.map(q => ({ type: String(q.type), count: Number(q.count), marks: Number(q.marks) })),
+      additionalInstructions: String(assignment.additionalInstructions),
+      fileContent: String(assignment.fileContent),
     });
 
     res.json({
