@@ -145,3 +145,22 @@ export const regenerateAssignment = async (
     next(error);
   }
 };
+
+export const deleteAssignment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const assignment = await Assignment.findByIdAndDelete(id);
+    if (!assignment) {
+      res.status(404).json({ success: false, message: "Assignment not found" });
+      return;
+    }
+    await Result.deleteMany({ assignmentId: id });
+    res.json({ success: true, message: "Assignment deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};

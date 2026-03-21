@@ -12,106 +12,64 @@ export default function OutputPage() {
   
   const [assignment, setAssignment] = useState<AssignmentResponse | null>(null);
   const [result, setResult] = useState<GeneratedPaper | null>(null);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   
   const { progress } = useWebSocket(assignmentId);
 
   useEffect(() => {
     if (!assignmentId) return;
 
-    const fetchAssignment = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assignments/${assignmentId}`);
-        const json = await res.json();
-        if (json.success) setAssignment(json.data);
+        const [aRes, rRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/assignments/${assignmentId}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/results/${assignmentId}`)
+        ]);
+        
+        const aJson = await aRes.json();
+        const rJson = await rRes.json();
+        
+        if (aJson.success) setAssignment(aJson.data);
+        if (rJson.success) setResult(rJson.data);
       } catch (err) {
-        console.error("Failed to fetch assignment", err);
+        console.error("Failed to fetch data", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchAssignment();
+    fetchData();
   }, [assignmentId]);
 
   useEffect(() => {
-    if (!assignmentId) return;
-
-    const fetchResult = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/results/${assignmentId}`);
-        const json = await res.json();
-        if (json.success) {
-          setResult(json.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch result", err);
-      }
-    };
+    if (!assignmentId || result) return;
 
     if (assignment?.status === "completed" || progress?.status === "completed") {
-      fetchResult();
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/results/${assignmentId}`)
+        .then(res => res.json())
+        .then(json => {
+           if (json.success) setResult(json.data);
+        });
     }
-  }, [assignmentId, assignment?.status, progress?.status]);
+  }, [assignmentId, assignment?.status, progress?.status, result]);
 
-  const handleRegenerate = async () => {
-    try {
-      setResult(null);
-      setAssignment(prev => prev ? { ...prev, status: "processing" } : null);
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assignments/${assignmentId}/regenerate`, {
-        method: "POST",
-      });
-    } catch (err) {
-      console.error("Failed to regenerate", err);
-    }
-  };
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '100px' }}>
+      <div style={{ width: '40px', height: '40px', border: '3px solid #E5E7EB', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+    </div>
+  );
 
+  const status = progress?.status || assignment?.status;
 
-  if (error) {
+  if (status === "pending" || status === "processing") {
     return (
-      <div className="card" style={{ borderColor: 'var(--danger)' }}>
-        <h2 style={{ color: 'var(--danger)', marginBottom: '1rem' }}>Error</h2>
-        <p>{error}</p>
-        <button className="btn-primary" onClick={() => router.push("/")} style={{ marginTop: '1rem' }}>
-          Back to Home
-        </button>
-      </div>
-    );
-  }
-
-  const currentStatus = progress?.status || assignment?.status;
-
-  if (currentStatus === "pending" || currentStatus === "processing") {
-    return (
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 2rem' }}>
-        <div style={{ width: '48px', height: '48px', border: '4px solid var(--border-color)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '1.5rem' }} />
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-          Generating Question Paper...
-        </h2>
-        <p style={{ color: 'var(--text-secondary)' }}>
-          {progress?.message || "AI is processing your request. Please wait."}
-        </p>
-        <div style={{ width: '100%', maxWidth: '400px', height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', marginTop: '2rem', overflow: 'hidden' }}>
-          <div style={{ height: '100%', backgroundColor: 'var(--primary-color)', width: `${progress?.progress || 10}%`, transition: 'width 0.3s ease' }} />
+      <div className="empty-state">
+        <div style={{ width: '48px', height: '48px', border: '4px solid #E5E7EB', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '1.5rem' }} />
+        <h2 className="empty-state-title">Generating Question Paper...</h2>
+        <p className="empty-state-desc">{progress?.message || "AI is curating your custom assessment. This usually takes 30-40 seconds."}</p>
+        <div style={{ width: '100%', maxWidth: '300px', height: '6px', background: '#E5E7EB', borderRadius: '3px', marginTop: '20px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: 'var(--primary)', width: `${progress?.progress || 20}%`, transition: 'width 0.4s ease' }}></div>
         </div>
-        <style dangerouslySetInnerHTML={{__html: `
-          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        `}} />
-      </div>
-    );
-  }
-
-  if (currentStatus === "failed") {
-    return (
-      <div className="card" style={{ borderColor: 'var(--danger)', textAlign: 'center', padding: '3rem' }}>
-        <div style={{ width: '64px', height: '64px', backgroundColor: '#FEF2F2', color: 'var(--danger)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 1.5rem auto' }}>
-          !
-        </div>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem' }}>Generation Failed</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-          {progress?.message || "An error occurred while generating the question paper."}
-        </p>
-        <button className="btn-primary" onClick={() => router.push("/")}>
-          Try Again
-        </button>
       </div>
     );
   }
@@ -119,111 +77,107 @@ export default function OutputPage() {
   if (!result) return null;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <button onClick={() => router.push("/")} className="btn-secondary">
-          &larr; Back
+    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      {/* Dark Banner */}
+      <div style={{ 
+        backgroundColor: '#1F2937', 
+        borderRadius: '16px', 
+        padding: '24px 32px', 
+        color: 'white', 
+        marginBottom: '32px',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <p style={{ fontSize: '15px', lineHeight: '1.6', color: '#E5E7EB', opacity: 0.9 }}>
+          Certainly, Lakshay! Here are customized Question Paper for your {result.classLevel} {result.subject} classes on the requested chapters and instructions.
+        </p>
+        <button 
+          onClick={() => window.print()}
+          className="btn-outline" 
+          style={{ width: 'fit-content', color: 'white', borderColor: 'rgba(255,255,255,0.3)', backgroundColor: 'transparent', padding: '8px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Download/Print
+          </div>
         </button>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={handleRegenerate} className="btn-secondary">
-            Regenerate
-          </button>
-          <button onClick={() => window.print()} className="btn-primary">
-            Print / Save PDF
-          </button>
-        </div>
       </div>
-      
-      <div className="card" id="question-paper" style={{ padding: '3rem 4rem' }}>
-        {/* Paper Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem', borderBottom: '2px solid var(--text-primary)', paddingBottom: '1.5rem' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '1rem' }}>
-            {result.schoolName}
-          </h1>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
-            <div>Subject: {result.subject}</div>
-            <div>Class: {result.classLevel}</div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-            <div>Time Allowed: {result.timeAllowed}</div>
-            <div>Max Marks: {result.maxMarks}</div>
-          </div>
+
+      {/* Styled Question Paper */}
+      <div className="card" id="question-paper" style={{ padding: '60px 80px', boxShadow: '0 4px 30px rgba(0,0,0,0.05)', borderRadius: '24px', border: '1px solid #E5E7EB' }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '4px' }}>{result.schoolName}</h1>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)' }}>Subject: {result.subject}</h2>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)' }}>Class: {result.classLevel}</h3>
         </div>
 
-        {/* General Instructions */}
-        {result.generalInstructions?.length > 0 && (
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>General Instructions:</h3>
-            <ul style={{ paddingLeft: '1.5rem', margin: 0 }}>
-              {result.generalInstructions.map((inst, i) => (
-                <li key={i} style={{ marginBottom: '0.25rem' }}>{inst}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Student Info */}
-        <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem' }}>
-          <div style={{ flex: 1 }}>Name: ______________________</div>
-          <div>Roll No: ______________________</div>
-          <div>Section: ______________________</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E5E7EB', paddingBottom: '12px', marginBottom: '24px', fontWeight: 600, fontSize: '14px' }}>
+          <span>Time Allowed: {result.timeAllowed}</span>
+          <span>Maximum Marks: {result.maxMarks}</span>
         </div>
 
-        {/* Sections */}
-        <div>
-          {result.sections.map((section, sIndex) => (
-            <div key={sIndex} style={{ marginBottom: '3rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{section.title}</h3>
-                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                  ({section.questionType} - {section.marksPerQuestion} mark{section.marksPerQuestion > 1 ? 's' : ''} each)
-                </span>
-              </div>
-              <p style={{ fontStyle: 'italic', marginBottom: '1.5rem' }}>{section.instruction}</p>
+        <p style={{ fontStyle: 'italic', fontSize: '14px', marginBottom: '32px', color: 'var(--text-secondary)' }}>
+          All questions are compulsory unless stated otherwise.
+        </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {section.questions.map((q, qIndex) => (
-                  <div key={qIndex} style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ fontWeight: 500 }}>Q{q.questionNumber}.</div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ marginBottom: '0.5rem' }}>{q.questionText}</p>
-                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                        <span className={`badge badge-${q.difficulty}`}>{q.difficulty}</span>
-                        <span className="badge" style={{ backgroundColor: '#F3F4F6', color: 'var(--text-secondary)' }}>
-                          [{q.marks} Mark{q.marks > 1 ? 's' : ''}]
-                        </span>
-                      </div>
-                    </div>
+        <div style={{ marginBottom: '48px', fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div>Name: ____________________________</div>
+          <div>Roll Number: ____________________________</div>
+          <div>{result.classLevel} Section: ____________________________</div>
+        </div>
+
+        {result.sections.map((section, sIndex) => (
+          <div key={sIndex} style={{ marginBottom: '40px' }}>
+            <h3 style={{ textAlign: 'center', fontSize: '18px', fontWeight: 700, marginBottom: '24px', textDecoration: 'underline' }}>{section.title}</h3>
+            
+            <p style={{ fontWeight: 600, marginBottom: '16px', fontSize: '15px' }}>{section.questionType}</p>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', fontStyle: 'italic' }}>{section.instruction}</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {section.questions.map((q, qIndex) => (
+                <div key={qIndex} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 600, minWidth: '24px' }}>{q.questionNumber}.</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ marginBottom: '8px', fontSize: '15px', lineHeight: '1.5' }}>
+                      ({q.difficulty}) {q.questionText}
+                    </p>
+                    <span style={{ fontSize: '13px', fontWeight: 600 }}>[{q.marks} Marks]</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
-        <div style={{ textAlign: 'center', marginTop: '4rem', marginBottom: '4rem', fontWeight: 600 }}>
-          *** END OF QUESTION PAPER ***
+        <div style={{ textAlign: 'center', marginTop: '60px', borderTop: '1px solid #E5E7EB', paddingTop: '20px', fontSize: '12px', color: 'var(--text-muted)' }}>
+          End of Question Paper
         </div>
 
         {/* Answer Key */}
-        <div style={{ borderTop: '2px dashed var(--border-color)', paddingTop: '2rem', pageBreakBefore: 'always' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>Answer Key</h2>
-          
-          {result.sections.map((section, sIndex) => (
-            <div key={`ans-${sIndex}`} style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>{section.title}</h4>
-              <div style={{ paddingLeft: '1rem' }}>
-                {section.questions.map((q, qIndex) => (
-                  <div key={`ans-q-${qIndex}`} style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-                    <span style={{ fontWeight: 500, minWidth: '40px' }}>Q{q.questionNumber}.</span>
-                    <span>{q.answer || "Answer not provided"}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div style={{ marginTop: '80px', borderTop: '2px dashed #E5E7EB', paddingTop: '40px', pageBreakBefore: 'always' }}>
+           <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '24px' }}>Answer Key:</h3>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {result.sections.flatMap(s => s.questions).map((q, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px', fontSize: '14px' }}>
+                  <span style={{ fontWeight: 600, minWidth: '24px' }}>{q.questionNumber}.</span>
+                  <p>{q.answer}</p>
+                </div>
+              ))}
+           </div>
         </div>
       </div>
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          .app-shell .sidebar, .top-header, .mobile-header, .bottom-nav, .dark-banner { display: none !important; }
+          .main-wrapper { margin-left: 0 !important; }
+          .page-content { padding: 0 !important; }
+          .card { border: none !important; box-shadow: none !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+          body { background: white !important; }
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}}/>
     </div>
   );
 }

@@ -16,7 +16,7 @@ const initialData: AssignmentData = {
   classLevel: "",
   section: "",
   dueDate: "",
-  questionConfigs: [{ id: "temp-1", type: "MCQ", count: 1, marks: 1 }],
+  questionConfigs: [{ id: "temp-1", type: "Multiple Choice Questions", count: 1, marks: 1 }],
   additionalInstructions: "",
   fileContent: "",
   fileName: "",
@@ -34,7 +34,7 @@ export const useAssignmentStore = create<AssignmentState>((set) => ({
         ...state.data,
         questionConfigs: [
           ...state.data.questionConfigs,
-          { id: Math.random().toString(36).substr(2, 9), type: "Objective", count: 1, marks: 1 }
+          { id: Math.random().toString(36).substr(2, 9), type: "Short Questions", count: 1, marks: 1 }
         ]
       }
     })),

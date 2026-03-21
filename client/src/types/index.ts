@@ -48,6 +48,9 @@ export interface AssignmentResponse {
   _id: string;
   title: string;
   subject: string;
+  classLevel?: string;
+  section?: string;
+  dueDate?: string;
   status: "pending" | "processing" | "completed" | "failed";
   createdAt: string;
 }
