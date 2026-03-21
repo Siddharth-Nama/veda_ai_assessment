@@ -21,8 +21,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // During SSR and before hydration, we render a stable "Desktop-ish" shell
-  // but with suppressHydrationWarning to avoid extension attribute errors
   if (!mounted) {
     return (
       <div className="app-shell" suppressHydrationWarning>
