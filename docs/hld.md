@@ -1,71 +1,34 @@
-# High-Level Design (HLD) - VedaAI
+# High-Level Design (HLD)
 
-## 🏗️ System Architecture
+System Architecture
 
-```mermaid
-graph TD
-    User((User))
-    
-    subgraph "Frontend (Next.js)"
-        UI[Dashboard / AppShell]
-        Store[Zustand Store]
-        WS_Client[Socket.io Client]
-    end
-    
-    subgraph "Backend (Express)"
-        API[REST API]
-        WS_Server[Socket.io Server]
-        Queue[BullMQ Producer]
-    end
-    
-    subgraph "Worker Layer"
-        Worker[BullMQ Consumer]
-        AI[Gemini AI Service]
-    end
-    
-    subgraph "Persistence & Messaging"
-        DB[(MongoDB)]
-        Redis[(Redis)]
-    end
+I used a modern stack to build VedaAI, separating the frontend from the heavy backend processing. 
 
-    User <--> UI
-    UI <--> API
-    API <--> DB
-    API <--> Redis
-    API <--> Queue
-    Queue <--> Redis
-    Redis <--> Worker
-    Worker <--> AI
-    Worker <--> DB
-    Worker -- "Real-time Update" --> WS_Server
-    WS_Server -- "Push" --> WS_Client
-```
+Architecture Overview:
+The system has four main parts:
+1. Frontend (Next.js): The site where teachers interact with the dashboard.
+2. API Server (Express): Handles requests and talks to the database.
+3. Worker (BullMQ): A separate process that handles AI generation tasks.
+4. Database and Cache: MongoDB for storage and Redis for queuing.
 
-## 🧩 Component Breakdown
+Component Details
 
-### 1. Frontend (Next.js)
-- **Dashboard**: Handles "Exact UI" replication for assignment management.
-- **AppShell**: Manages conditional rendering for desktop and mobile views.
-- **WebSocket Integration**: Listens for `generation:progress` events to update the UI in real-time.
+Frontend
+The frontend uses Next.js and is where the dashboard is built. It uses the App router and custom CSS to match the design. It also connects to a WebSocket server to get live updates on task progress.
 
-### 2. Backend (Express)
-- **API Routes**: Handles CRUD operations for assignments and results.
-- **Queue Management**: Enqueues AI generation tasks to Redis via BullMQ.
-- **WebSocket Gateway**: Forwards progress updates from the background worker to the specific client.
+Backend
+The backend is an Express server. It provides API endpoints for the frontend to create and manage assignments. Instead of running AI generation directly, it sends those tasks to a queue in Redis.
 
-### 3. AI Worker (BullMQ)
-- **Isolator**: Separates heavy AI processing from the main API thread.
-- **Gemini Service**: Orchestrates multi-modal prompts and parses structured JSON responses.
-- **DB Sink**: Saves the final generated question paper to MongoDB.
+Worker
+The worker is a separate part of the backend. It watches the Redis queue for new jobs. When it finds one, it calls the Gemini AI API, waits for the result, and then saves it to MongoDB. It also sends progress messages back to the user through WebSockets.
 
-### 4. Persistence Layer
-- **MongoDB**: Primary store for metadata and the final generated output.
-- **Redis**: Acts as the message broker for BullMQ and handles WebSocket state.
+Database and Messaging
+VedaAI uses MongoDB as the main database for storing all user documents. Redis is used both as a message broker for the worker queue and to help with real-time WebSocket communication.
 
-## 🔄 Data Flow
-1. User submits "Create Assignment" form.
-2. API saves a "pending" assignment and enqueues a job to BullMQ.
-3. **Background Worker** picks up the job, calls Gemini API.
-4. Worker emits progress (10%, 80%, 100%) via WebSocket.
-5. Worker saves the completed "Result" to MongoDB and updates status to "completed".
-6. Frontend automatically refreshes to show the new content.
+Data Flow
+1. User creates a new assignment on the dashboard.
+2. The server saves the initial assignment data and puts a job in the queue.
+3. The background worker picks up the job and starts talking to Gemini AI.
+4. The worker sends updates like "Processing..." or "80% complete" back to the UI.
+5. Once the AI is done, the worker saves the final question paper and marks the assignment as finished.
+6. The user's dashboard updates automatically to show the final result.
