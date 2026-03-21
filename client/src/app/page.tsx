@@ -19,7 +19,9 @@ export default function Dashboard() {
     setMounted(true);
     const fetchAssignments = async () => {
       try {
+        setLoading(true);
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assignments`);
+        if (!res.ok) throw new Error("Server responded with error");
         const json = await res.json();
         if (json.success) {
           setAssignments(json.data);
@@ -32,7 +34,7 @@ export default function Dashboard() {
     };
 
     fetchAssignments();
-  }, []);
+  }, [router]);
 
   const filteredAssignments = assignments.filter(a => 
     a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -50,6 +52,19 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error("Failed to delete", err);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <span style={{ backgroundColor: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>Completed</span>;
+      case "processing":
+        return <span style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>Processing</span>;
+      case "failed":
+        return <span style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>Failed</span>;
+      default:
+        return <span style={{ backgroundColor: '#F3F4F6', color: '#374151', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>Pending</span>;
     }
   };
 
@@ -136,7 +151,12 @@ export default function Dashboard() {
 
       <div className="assignments-grid">
         {filteredAssignments.map((assignment) => (
-          <div key={assignment._id} className="assignment-card">
+          <div 
+            key={assignment._id} 
+            className="assignment-card"
+            onClick={() => router.push(`/output/${assignment._id}`)}
+            style={{ cursor: 'pointer' }}
+          >
             <button 
               className="assignment-card-menu-btn"
               onClick={(e) => {
@@ -158,7 +178,10 @@ export default function Dashboard() {
               </div>
             )}
             
-            <h3 className="assignment-card-title">{assignment.title}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+              <h3 className="assignment-card-title" style={{ margin: 0 }}>{assignment.title}</h3>
+              {getStatusBadge(assignment.status)}
+            </div>
             
             <div className="assignment-card-meta">
               <span style={{ color: '#6B7280' }}>Assigned on : <strong style={{color: '#111827'}}>{assignment.createdAt ? new Date(assignment.createdAt).toLocaleDateString('en-GB').replace(/\//g, '-') : 'N/A'}</strong></span>
