@@ -5,12 +5,33 @@ import { GenerationJobData } from "./generationQueue";
 import Assignment from "../models/Assignment";
 import Result from "../models/Result";
 import { getIO } from "../websocket/socketManager";
+import pdf from "pdf-parse";
 
 const processGenerationJob = async (job: Job<GenerationJobData>): Promise<void> => {
-  const { assignmentId, title, subject, classLevel, questionConfigs, additionalInstructions, fileContent } = job.data;
+  let { assignmentId, title, subject, classLevel, questionConfigs, additionalInstructions, fileContent } = job.data;
 
   try {
     const io = getIO();
+    
+    // Handle PDF text extraction
+    if (fileContent && fileContent.startsWith("data:application/pdf;base64,")) {
+      io.to(assignmentId).emit("generation:progress", {
+        assignmentId,
+        status: "processing",
+        message: "Extracting text from PDF...",
+        progress: 5,
+      });
+      
+      const base64Data = fileContent.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
+      const data = await pdf(buffer);
+      fileContent = data.text;
+    } else if (fileContent && fileContent.startsWith("data:")) {
+      // Handle other text-based base64 files
+      const base64Data = fileContent.split(",")[1];
+      fileContent = Buffer.from(base64Data, "base64").toString("utf-8");
+    }
+
     io.to(assignmentId).emit("generation:progress", {
       assignmentId,
       status: "processing",
