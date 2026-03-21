@@ -8,10 +8,25 @@ export default function AssignmentForm() {
   const { data, updateField, addQuestionConfig, updateQuestionConfig, removeQuestionConfig } = useAssignmentStore();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const totalQuestions = data.questionConfigs.reduce((acc, curr) => acc + curr.count, 0);
-  const totalMarks = data.questionConfigs.reduce((acc, curr) => acc + (curr.count * curr.marks), 0);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File size should be less than 10MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      updateField("fileContent", base64);
+      updateField("fileName", file.name);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const validateForm = () => {
     if (!data.title.trim()) return "Assignment Title is required";
@@ -71,12 +86,29 @@ export default function AssignmentForm() {
         </div>
 
         <div className="file-upload-area" style={{ marginBottom: '24px' }}>
-          <div className="file-upload-icon">📁</div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            style={{ display: 'none' }} 
+            accept=".pdf,.txt,.doc,.docx"
+            onChange={handleFileChange}
+          />
+          <div className="file-upload-icon">{data.fileName ? "📄" : "📁"}</div>
           <div className="file-upload-text">
-            <strong>Choose a file</strong> or drag & drop it here <br />
-            JPEG, PNG, PDF, DOC
+            {data.fileName ? (
+              <strong>{data.fileName}</strong>
+            ) : (
+              <><strong>Choose a file</strong> or drag & drop it here <br /> PDF, TXT, DOC</>
+            )}
           </div>
-          <button type="button" className="btn-outline" style={{ marginTop: '12px', padding: '6px 16px' }}>Browse Files</button>
+          <button 
+            type="button" 
+            className="btn-outline" 
+            style={{ marginTop: '12px', padding: '6px 16px' }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {data.fileName ? "Change File" : "Browse Files"}
+          </button>
         </div>
 
         <div className="form-grid-2">
