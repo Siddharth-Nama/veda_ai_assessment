@@ -2,33 +2,48 @@
 
 System Architecture
 
-I used a modern stack to build VedaAI, separating the frontend from the heavy backend processing. 
+VedaAI is built to handle heavy AI tasks without slowing down the user's browser. I used a distributed architecture that separates the API from the AI processing.
 
-Architecture Overview:
-The system has four main parts:
-1. Frontend (Next.js): The site where teachers interact with the dashboard.
-2. API Server (Express): Handles requests and talks to the database.
-3. Worker (BullMQ): A separate process that handles AI generation tasks.
-4. Database and Cache: MongoDB for storage and Redis for queuing.
+Architecture Diagram:
 
-Component Details
+```mermaid
+graph TD
+    Client[Next.js Frontend]
+    API[Express API]
+    Queue[BullMQ / Redis]
+    Worker[AI Generation Worker]
+    Gemini[Google Gemini AI]
+    DB[(MongoDB)]
+    Socket[Socket.io Server]
 
-Frontend
-The frontend uses Next.js and is where the dashboard is built. It uses the App router and custom CSS to match the design. It also connects to a WebSocket server to get live updates on task progress.
+    Client -- HTTP Request --> API
+    API -- Save Assignment --> DB
+    API -- Enqueue Job --> Queue
+    Queue -- Pick Job --> Worker
+    Worker -- Generate Questions --> Gemini
+    Worker -- Save Result --> DB
+    Worker -- Progress Update --> Socket
+    Socket -- Push Update --> Client
+```
 
-Backend
-The backend is an Express server. It provides API endpoints for the frontend to create and manage assignments. Instead of running AI generation directly, it sends those tasks to a queue in Redis.
+Architectural Choices
 
-Worker
-The worker is a separate part of the backend. It watches the Redis queue for new jobs. When it finds one, it calls the Gemini AI API, waits for the result, and then saves it to MongoDB. It also sends progress messages back to the user through WebSockets.
+1. Background Worker (BullMQ)
+AI generation can take 30-40 seconds. I used BullMQ and Redis to handle this in the background. This ensures the API server stays responsive and can handle other users while the AI is thinking.
 
-Database and Messaging
-VedaAI uses MongoDB as the main database for storing all user documents. Redis is used both as a message broker for the worker queue and to help with real-time WebSocket communication.
+2. Real-time Feedback (Socket.io)
+Since the generation happens in the background, the user needs to know what is happening. I used WebSockets to push live progress updates (10%, 80%, etc.) from the worker directly to the dashboard.
 
-Data Flow
-1. User creates a new assignment on the dashboard.
-2. The server saves the initial assignment data and puts a job in the queue.
-3. The background worker picks up the job and starts talking to Gemini AI.
-4. The worker sends updates like "Processing..." or "80% complete" back to the UI.
-5. Once the AI is done, the worker saves the final question paper and marks the assignment as finished.
-6. The user's dashboard updates automatically to show the final result.
+3. Persistence (MongoDB)
+I chose MongoDB because the generated question papers have a nested, flexible structure (sections, questions, answers). A document database is a natural fit for this kind of data.
+
+4. Frontend Shell (Next.js)
+The frontend uses Next.js with a custom AppShell. This handles the UI replication for both desktop and mobile while ensuring that the site loads quickly and doesn't have hydration errors.
+
+Data Flow Steps
+1. The user fills out the form and clicks "Create".
+2. The server creates a record in MongoDB with a "pending" status.
+3. A background job is created in Redis.
+4. The worker picks up the job, sends the prompt to Gemini, and updates the status to "processing".
+5. As the AI works, the worker sends status messages back to the UI via WebSockets.
+6. Once the paper is ready, it is saved to the database and the user is notified to view the output.
