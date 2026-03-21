@@ -16,7 +16,9 @@ export function useWebSocket(assignmentId: string | undefined) {
     if (!assignmentId) return;
 
     const socketUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:5000';
-    const newSocket = io(socketUrl);
+    const newSocket = io(socketUrl, {
+      transports: ['websocket', 'polling']
+    });
 
     newSocket.on('connect', () => {
       newSocket.emit('join', assignmentId);

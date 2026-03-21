@@ -6,9 +6,14 @@ let io: Server;
 export const initializeWebSocket = (server: HttpServer): Server => {
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || "http://localhost:3000",
+      origin: [
+        process.env.CLIENT_URL || "http://localhost:3000",
+        "https://veda-ai-assessment.vercel.app"
+      ],
       methods: ["GET", "POST"],
+      credentials: true
     },
+    transports: ['websocket', 'polling']
   });
 
   io.on("connection", (socket) => {
