@@ -1,66 +1,56 @@
 # VedaAI - AI-Powered Assessment Platform
-[Live Application: Click Here to Open App](https://veda-ai-assessment.vercel.app)
+Live Application: https://veda-ai-assessment.vercel.app
 
-## Overview
-Welcome to my submission for the VedaAI Assessment. I have engineered **VedaAI**, a high-performance AI-driven assessment platform that transforms curriculum requirements into structured, professional question papers.
+Overview
+This is my project for the VedaAI assessment. VedaAI is a platform that uses AI to help teachers create professional question papers and assignments. 
 
-This project is a pixel-perfect, full-stack AI platform. It integrates a refined React dashboard, multi-modal AI processing (Google Gemini), and a distributed task queue (BullMQ/Redis) to ensure reliable content generation. I built this to not just meet, but exceed the assignment requirements, focusing on **Exact UI Replication**, **Architectural Purity**, and **Real-time Feedback**.
+I focused on making the UI look exactly like the target designs and ensuring the entire system works reliably. The project handles both desktop and mobile views and uses background workers to generate questions without slowing down the site.
 
-## ✅ Requirement Satisfaction Matrix
-I have rigorously implemented 100% of the assignment requirements:
+Requirement Fulfillment
+I have finished all the requirements for this assignment:
 
-1. **Exact UI Replication**
-   - **Desktop**: Pixel-perfect matching of the provided dashboard design (Image 2) with pill-shaped headers, refined typography, and exact color palettes.
-   - **Mobile**: Fully responsive mobile interface (Image 3) featuring conditional rendering (if/else logic) for headers and navigation.
+1. UI and Design
+- Desktop Layout: The dashboard matches the provided image exactly, including the pill-shaped headers and specific color choices.
+- Mobile Layout: Used conditional logic to show a mobile-specific header and bottom navigation on smaller screens.
 
-2. **AI-Powered Question Generation**
-   - **LLM Integration**: Utilizes Google Gemini to generate high-quality questions based on subject, title, and teacher instructions.
-   - **Structured Output**: AI generates valid JSON containing sections, difficulty levels, and marking schemes.
+2. AI Question Generation
+- Gemini Integration: Uses Google Gemini to create questions based on the teacher's input.
+- Data Format: The AI returns a structured JSON format that includes marks and difficulty levels.
 
-3. **Distributed Execution Engine**
-   - **Asynchronous Processing**: Every generation job runs as an isolated worker task via BullMQ and Redis, keeping the UI non-blocking.
-   - **Real-time WebSockets**: Integrated Socket.io to provide live progress bars (0-100%) as the AI thinks and saves data.
+3. Background Processing
+- BullMQ and Redis: Long tasks are handled in the background so the user doesn't have to wait on the page.
+- Real-time Updates: Uses Socket.io to show a progress bar to the user while the questions are being generated.
 
-4. **Data Persistence & Management**
-   - **Database**: MongoDB (via Mongoose) stores all assignments, results, and processing statuses.
-   - **History**: A professional dashboard allows users to view, manage, and delete previous assignments.
+4. Backend and Database
+- MongoDB: Stores all assignments and generated papers.
+- API: includes routes to list, create, and delete assignments.
 
-## 🛠️ Tech Stack
-- **Frontend**: Next.js (App Router) with TypeScript & Vanilla CSS.
-- **Backend**: Express.js with TypeScript.
-- **Content Engine**: Google Gemini AI API.
-- **Task Queue**: BullMQ & Redis (ioredis).
-- **Real-time**: Socket.io (WebSockets).
-- **Database**: MongoDB (Mongoose).
-- **Deployment**: Vercel (Frontend) & Render (Backend/Docker).
+Tech Stack
+- Frontend: Next.js with TypeScript and Vanilla CSS.
+- Backend: Express.js with TypeScript.
+- AI: Google Gemini API.
+- Task Queue: BullMQ and Redis.
+- Real-time: Socket.io.
+- Database: MongoDB.
+- Hosting: Vercel for the frontend and Render for the backend.
 
-## 📂 Project Structure
-- **/client**: Next.js frontend with exact UI replicas.
-- **/server**: Express backend with BullMQ workers and AI services.
-- **/docs**: Detailed technical documentation (HLD, LLD, API).
+Project Structure
+- client: Frontend code.
+- server: Backend and worker code.
+- docs: technical design and API details.
 
-## 🚀 Setup Instructions
+Setup Instructions
 
-### Pre-requisites
-- Node.js v18+
-- MongoDB & Redis (or Upstash/Atlas for cloud)
-- Gemini API Key
+Backend Setup
+1. Go to the server folder.
+2. Run npm install.
+3. Set up your .env file.
+4. Run npm run build and then npm start.
 
-### Backend Setup
-```bash
-cd server
-npm install
-# Configure .env based on .env.example
-npm run build
-npm start
-```
+Frontend Setup
+1. Go to the client folder.
+2. Run npm install.
+3. Set up your .env file.
+4. Run npm run dev.
 
-### Frontend Setup
-```bash
-cd client
-npm install
-# Configure .env based on .env.example
-npm run dev
-```
-
-© 2026 Developed by Siddharth Nama
+Siddharth Nama
