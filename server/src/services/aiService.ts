@@ -157,7 +157,7 @@ const parseResponse = (responseText: string): GeneratedPaper => {
 export const generateQuestionPaper = async (
   input: GenerationInput
 ): Promise<GeneratedPaper> => {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const prompt = buildPrompt(input);
 
   const result = await model.generateContent(prompt);
