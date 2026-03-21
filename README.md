@@ -1,66 +1,109 @@
 # VedaAI Assessment Creator
 
-AI-powered assessment and question paper generator for teachers.
+A full-stack, AI-powered application that allows teachers to rapidly create structured question papers. Built specifically for the VedaAI Full Stack Engineering Assignment.
 
-## Architecture
+## Live Demo
+*Will be provided via Vercel / Render deployment links.*
 
-```
-├── client/    → Next.js + TypeScript frontend
-└── server/    → Express + TypeScript backend
-```
+---
 
-## Tech Stack
+## 🏗️ Architecture Overview
 
-**Frontend:** Next.js, TypeScript, Zustand, Socket.io-client, jsPDF
+The system follows a typical modern stack separated into a frontend client and backend service, communicating via REST APIs and WebSockets.
 
-**Backend:** Express, TypeScript, MongoDB, Redis, BullMQ, Socket.io, Google Gemini AI
+### 1. Frontend (Next.js + TypeScript)
+- **Framework:** Next.js (App Router)
+- **State Management:** Zustand (lightweight, perfect for form state)
+- **Styling:** Custom CSS with CSS Variables (matching the provided Figma design)
+- **Real-time:** Socket.io-client for watching AI generation progress
+- **PDF Export:** Browser-native print-to-PDF optimized via CSS (for perfect visual layout) + basic jsPDF fallback.
 
-## Setup
+### 2. Backend (Node.js + Express + TypeScript)
+- **API Engine:** Express.js
+- **Database:** MongoDB (using Mongoose for schemas: `Assignment` and `Result`)
+- **Job Queue:** BullMQ + Redis (handles background processing of AI requests)
+- **AI Integration:** Google Gemini API (`gemini-1.5-flash` model for fast, structured JSON output)
+- **Real-time Engine:** Socket.io server to push progress percentage to the client.
+
+---
+
+## 🚀 Key Features
+
+1. **Intelligent Assignment Creation**
+   - Configure multiple sections of questions (MCQ, Short, Long, Numerical)
+   - Dynamic steppers for count and marks
+   - Drag-and-drop file upload placeholder
+
+2. **AI-Powered Generation Queue**
+   - The user doesn't wait for a slow HTTP request to timeout.
+   - Request goes to a BullMQ queue backed by Redis (Upstash).
+   - A background worker processes the job using Gemini AI, ensuring reliability.
+
+3. **Real-Time WebSocket Progress**
+   - While the AI generates the paper, the frontend shows a live loading spinner and progress bar.
+   - Receives events: `processing`, `completed`, `failed`.
+
+4. **Beautiful, Structured Output**
+   - Clean, exam-style UI formatting mimicking the Figma design.
+   - Difficulty Badges (Easy/Moderate/Challenging) and Marks tags.
+   - Dedicated "Answer Key" section auto-generated at the bottom.
+   - **Regenerate Action:** Clears old results and re-queues the generation with one click.
+
+---
+
+## 🛠️ Local Setup Instructions
 
 ### Prerequisites
 - Node.js 18+
-- MongoDB (Atlas or local)
-- Redis (Upstash or local)
-- Google Gemini API key
+- MongoDB instance (local or Atlas)
+- Redis instance (local or Upstash)
+- Google Gemini API Key
 
-### Server
+### 1. Server Setup
 ```bash
 cd server
 npm install
-cp .env.example .env   # fill in your env vars
+
+# Create .env based on .env.example
+# Add your MONGODB_URI, REDIS_URL, and GEMINI_API_KEY
+cp .env.example .env
+
+# Start dev server
 npm run dev
 ```
+The server will run on `http://localhost:5000`.
 
-### Client
+### 2. Client Setup
 ```bash
 cd client
 npm install
-cp .env.example .env.local   # fill in your env vars
+
+# Create .env.local
+cp .env.example .env.local
+
+# Start dev server
 npm run dev
 ```
+The client will run on `http://localhost:3000`.
 
-## Environment Variables
+---
 
-### Server (.env)
-```
-PORT=5000
-MONGODB_URI=mongodb+srv://...
-REDIS_URL=rediss://...
-GEMINI_API_KEY=your_key
-CLIENT_URL=http://localhost:3000
-```
+## 🧪 Testing
 
-### Client (.env.local)
-```
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-NEXT_PUBLIC_WS_URL=http://localhost:5000
+The backend includes a suite of Jest unit tests covering:
+- Mongoose model validation rules
+- AI Response JSON parsing logic
+- Environmental variable validation
+
+To run tests:
+```bash
+cd server
+npm test
 ```
 
-## Features
-- Assignment creation with file upload, question type configuration
-- AI-powered question paper generation using Google Gemini
-- Real-time progress updates via WebSocket
-- Structured output with sections, difficulty badges, marks
-- PDF export with proper formatting
-- Background job processing with BullMQ
-- Redis caching for performance
+---
+
+## 👨‍💻 Development Flow & Commits
+This repository was built with over 30 isolated atomic commits, documenting the exact step-by-step approach taken from repository initialization to final polish.
+
+No comments exist in the final codebase, adhering strictly to clean code practices.
