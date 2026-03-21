@@ -5,7 +5,7 @@ import { GenerationJobData } from "./generationQueue";
 import Assignment from "../models/Assignment";
 import Result from "../models/Result";
 import { getIO } from "../websocket/socketManager";
-import pdf from "pdf-parse";
+const pdf = require("pdf-parse");
 
 const processGenerationJob = async (job: Job<GenerationJobData>): Promise<void> => {
   let { assignmentId, title, subject, classLevel, questionConfigs, additionalInstructions, fileContent } = job.data;
