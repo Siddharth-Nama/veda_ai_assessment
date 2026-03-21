@@ -8,11 +8,11 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Home", icon: "Home", path: "/dashboard" },
-    { name: "My Groups", icon: "Users", path: "/groups" },
+    { name: "Home", icon: "Home", path: "/" },
+    { name: "My Groups", icon: "Users", path: "/" },
     { name: "Assignments", icon: "FileText", path: "/", badge: 10 },
-    { name: "AI Teacher's Toolkit", icon: "Tool", path: "/toolkit" },
-    { name: "My Library", icon: "Book", path: "/library" },
+    { name: "AI Teacher's Toolkit", icon: "Tool", path: "/" },
+    { name: "My Library", icon: "Book", path: "/" },
   ];
 
   return (
