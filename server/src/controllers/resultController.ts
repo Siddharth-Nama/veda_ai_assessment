@@ -22,7 +22,7 @@ export const getResultByAssignment = async (
 
     const result = await Result.findOne({ assignmentId });
     if (!result) {
-      res.status(404).json({ success: false, message: "Result not found" });
+      res.json({ success: false, message: "Result not yet generated" });
       return;
     }
 
