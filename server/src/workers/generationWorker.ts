@@ -13,7 +13,6 @@ const processGenerationJob = async (job: Job<GenerationJobData>): Promise<void> 
   try {
     const io = getIO();
     
-    // Handle PDF text extraction
     if (fileContent && fileContent.startsWith("data:application/pdf;base64,")) {
       io.to(assignmentId).emit("generation:progress", {
         assignmentId,
@@ -27,7 +26,6 @@ const processGenerationJob = async (job: Job<GenerationJobData>): Promise<void> 
       const data = await pdf(buffer);
       fileContent = data.text;
     } else if (fileContent && fileContent.startsWith("data:")) {
-      // Handle other text-based base64 files
       const base64Data = fileContent.split(",")[1];
       fileContent = Buffer.from(base64Data, "base64").toString("utf-8");
     }

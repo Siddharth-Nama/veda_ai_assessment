@@ -148,7 +148,6 @@ const parseResponse = (responseText: string): GeneratedPaper => {
 
     return parsed as GeneratedPaper;
   } catch (error) {
-    console.error("Parse Error. Response was:", responseText);
     throw new Error(`Failed to parse AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
@@ -157,7 +156,7 @@ export const generateQuestionPaper = async (
   input: GenerationInput
 ): Promise<GeneratedPaper> => {
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash",
+    model: "gemini-1.5-flash-latest",
     generationConfig: {
       temperature: 0.7,
       topP: 0.95,
@@ -179,7 +178,6 @@ export const generateQuestionPaper = async (
 
     return parseResponse(text);
   } catch (error) {
-    console.error("AI Generation Error:", error);
     throw error;
   }
 };
