@@ -122,47 +122,64 @@ IMPORTANT: Respond ONLY with valid JSON in this exact format, no markdown or ext
 };
 
 const parseResponse = (responseText: string): GeneratedPaper => {
-  let cleaned = responseText.trim();
-  if (cleaned.startsWith("```json")) {
-    cleaned = cleaned.slice(7);
-  }
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.slice(3);
-  }
-  if (cleaned.endsWith("```")) {
-    cleaned = cleaned.slice(0, -3);
-  }
-  cleaned = cleaned.trim();
-
-  const parsed = JSON.parse(cleaned);
-
-  if (!parsed.sections || !Array.isArray(parsed.sections)) {
-    throw new Error("Invalid response: missing sections array");
-  }
-
-  for (const section of parsed.sections) {
-    if (!section.questions || !Array.isArray(section.questions)) {
-      throw new Error(`Invalid response: section "${section.title}" missing questions`);
+  try {
+    let jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON found in response");
     }
-    for (const question of section.questions) {
-      if (!["easy", "moderate", "hard"].includes(question.difficulty)) {
-        question.difficulty = "moderate";
+    
+    const cleaned = jsonMatch[0];
+    const parsed = JSON.parse(cleaned);
+
+    if (!parsed.sections || !Array.isArray(parsed.sections)) {
+      throw new Error("Invalid response: missing sections array");
+    }
+
+    for (const section of parsed.sections) {
+      if (!section.questions || !Array.isArray(section.questions)) {
+        throw new Error(`Invalid response: section "${section.title}" missing questions`);
+      }
+      for (const question of section.questions) {
+        if (!["easy", "moderate", "hard"].includes(question.difficulty)) {
+          question.difficulty = "moderate";
+        }
       }
     }
-  }
 
-  return parsed as GeneratedPaper;
+    return parsed as GeneratedPaper;
+  } catch (error) {
+    console.error("Parse Error. Response was:", responseText);
+    throw new Error(`Failed to parse AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
 
 export const generateQuestionPaper = async (
   input: GenerationInput
 ): Promise<GeneratedPaper> => {
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    generationConfig: {
+      temperature: 0.7,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+    }
+  });
+
   const prompt = buildPrompt(input);
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
-  return parseResponse(text);
+    if (!text) {
+      throw new Error("Empty response from AI model");
+    }
+
+    return parseResponse(text);
+  } catch (error) {
+    console.error("AI Generation Error:", error);
+    throw error;
+  }
 };

@@ -76,6 +76,17 @@ export default function OutputPage() {
 
   const status = progress?.status || assignment?.status;
 
+  if (status === "failed") {
+    return (
+      <div className="empty-state">
+        <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
+        <h2 className="empty-state-title">Generation Failed</h2>
+        <p className="empty-state-desc">Something went wrong while creating your question paper. This could be due to a complex prompt or temporary AI downtime.</p>
+        <button onClick={handleRegenerate} className="btn-primary-dark" style={{ marginTop: '20px' }}>Try Again</button>
+      </div>
+    );
+  }
+
   if (status === "pending" || status === "processing") {
     return (
       <div className="empty-state">
@@ -89,7 +100,14 @@ export default function OutputPage() {
     );
   }
 
-  if (!result) return null;
+  if (!result) {
+    return (
+      <div className="empty-state">
+        <div style={{ width: '40px', height: '40px', border: '3px solid #E5E7EB', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <p style={{ marginTop: '20px', color: '#6B7280' }}>Loading final results...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
